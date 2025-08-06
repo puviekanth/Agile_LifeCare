@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import EHeader from '../components/EHeader';
+import Footer from '../components/Footer'
 
 const UploadPrescription = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -137,6 +139,8 @@ const UploadPrescription = () => {
   };
 
   return (
+    <>
+    <EHeader />
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Upload Prescription</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -312,8 +316,10 @@ const UploadPrescription = () => {
             </div>
           </div>
         </div>
+        
       )}
     </div>
+  </>
   );
 };
 

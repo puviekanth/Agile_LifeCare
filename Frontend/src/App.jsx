@@ -19,6 +19,8 @@ import Checkout from './pages/Checkout';
 import BookConsultation from './pages/BookConsultation';
 import UploadPrescription from './pages/UploadPrescription';
 import Prescriptions from './pages/Prescriptions';
+import UploadList from './pages/UploadList';
+import ManualPrescriptions from './pages/ManualPrescriptions';
 
 
 function App() {
@@ -45,6 +47,8 @@ function App() {
           <Route path='/consultation' element={<BookConsultation />}/>
           <Route path='/prescription' element={<UploadPrescription />} />
           <Route path='/prescriptions' element={<Prescriptions />} />
+          <Route path='/upload-list' element={<UploadList />} />
+          <Route path='/manual-presc' element={<ManualPrescriptions />} />
         </Routes>
       </div>
       <Footer />

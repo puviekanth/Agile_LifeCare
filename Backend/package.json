@@ -10,15 +10,24 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/vision": "^5.3.3",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.3.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "openai": "^5.11.0",
     "path": "^0.12.7",
-    "salt": "^0.5.5"
+    "pdf-parse": "^1.1.1",
+    "salt": "^0.5.5",
+    "sharp": "^0.34.3",
+    "tesseract.js": "^6.0.1",
+    "xlsx": "^0.18.5"
   }
 }

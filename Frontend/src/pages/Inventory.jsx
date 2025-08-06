@@ -1,25 +1,49 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch, FiEye, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiSearch, FiEye, FiTrash2, FiPlus } from 'react-icons/fi';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [expiryFilter, setExpiryFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const api = 'http://localhost:3000';
   const navigate = useNavigate();
 
-  const filteredData = products.filter((item) =>
-    (item.productName?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-     String(item.id)?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-     item.companyName?.toLowerCase()?.includes(searchTerm.toLowerCase())) &&
-    (filter ? item.category === filter : true)
-  );
+  const filteredData = products.filter((item) => {
+    const matchesSearch = 
+      item.productName?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      String(item.id)?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      item.companyName?.toLowerCase()?.includes(searchTerm.toLowerCase());
+
+    const matchesCategory = categoryFilter ? item.category === categoryFilter : true;
+
+    const matchesExpiry = expiryFilter
+      ? (() => {
+          const today = new Date();
+          const expiry = new Date(item.expiryDate);
+          const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+          if (expiryFilter === 'Expired') return diffDays < 0;
+          if (expiryFilter === 'Expiring Soon') return diffDays >= 0 && diffDays <= 30;
+          if (expiryFilter === 'Safe') return diffDays > 30;
+          return true;
+        })()
+      : true;
+
+    const matchesStock = stockFilter
+      ? stockFilter === 'Low Stock' 
+        ? item.quantity < 10 
+        : item.quantity >= 10
+      : true;
+
+    return matchesSearch && matchesCategory && matchesExpiry && matchesStock;
+  });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -29,13 +53,9 @@ const Home = () => {
         const response = await axios.get(`${api}/getproducts`);
         setProducts(response.data);
       } catch (error) {
-        if (error.response) {
-          setError(`Server error: ${error.response.data.message || 'Unknown error'}`);
-        } else if (error.request) {
-          setError('Network error: Unable to reach the server. Please check your connection.');
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
+        if (error.response) setError(`Server error: ${error.response.data.message || 'Unknown error'}`);
+        else if (error.request) setError('Network error: Unable to reach the server.');
+        else setError('An unexpected error occurred.');
         console.error('Axios error:', error);
       } finally {
         setLoading(false);
@@ -84,15 +104,34 @@ const Home = () => {
               className="flex-1 border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
               className="border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             >
-              <option value="">Filter by OTC</option>
+              <option value="">Filter by Category</option>
               <option value="OTC">OTC</option>
               <option value="A1">A1</option>
               <option value="A2">A2</option>
               <option value="A3">A3</option>
+            </select>
+            <select
+              value={expiryFilter}
+              onChange={(e) => setExpiryFilter(e.target.value)}
+              className="border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            >
+              <option value="">Filter by Expiry</option>
+              <option value="Expired">Expired</option>
+              <option value="Expiring Soon">Expiring Soon</option>
+              <option value="Safe">Safe</option>
+            </select>
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              className="border border-gray-300 p-3 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            >
+              <option value="">Filter by Stock</option>
+              <option value="Low Stock">Low Stock</option>
+              <option value="In Stock">In Stock</option>
             </select>
           </div>
         </div>
@@ -107,7 +146,6 @@ const Home = () => {
               <thead className="bg-blue-100 text-blue-900 border-b">
                 <tr className="text-left">
                   <th className="py-2 px-3">Image</th>
-                  <th className="px-3">Product ID</th>
                   <th className="px-3">Medicine Name</th>
                   <th className="px-3">Price (Rs.)</th>
                   <th className="px-3">OTC Status</th>
@@ -116,21 +154,21 @@ const Home = () => {
                   <th className="px-3">Description</th>
                   <th className="px-3">Manufacture Date</th>
                   <th className="px-3">Expiration Warning</th>
-                  <th className='px-3'>Stock Level</th>
+                  <th className="px-3">Stock Status</th>
                   <th className="px-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan="11" className="text-center py-6">
+                    <td colSpan="12" className="text-center py-6">
                       Loading products...
                     </td>
                   </tr>
                 )}
                 {error && (
                   <tr>
-                    <td colSpan="11" className="text-center py-6 text-red-500">
+                    <td colSpan="12" className="text-center py-6 text-red-500">
                       {error}
                     </td>
                   </tr>
@@ -144,7 +182,7 @@ const Home = () => {
                         <div className="w-10 h-10 bg-gray-200 rounded-md shadow-inner"></div>
                       )}
                     </td>
-                    <td className="px-3 font-medium">{item.id}</td>
+                    
                     <td className="px-3">
                       <Link
                         to={`/product/${item._id}`}
@@ -166,8 +204,7 @@ const Home = () => {
                     <td className="px-3">{item.companyName}</td>
                     <td className="px-3 font-semibold">{item.quantity}</td>
                     <td className="px-3 text-gray-600">{item.description}</td>
-                   <td className="px-3">{item.manufactureDate?.slice(0, 10)}</td>
-
+                    <td className="px-3">{item.manufactureDate?.slice(0, 10)}</td>
                     <td className="px-3">
                       {(() => {
                         const today = new Date();
@@ -178,6 +215,11 @@ const Home = () => {
                         if (diffDays <= 30) return <span className="text-yellow-600 font-semibold">Expiring soon</span>;
                         return <span className="text-green-600">Safe to use</span>;
                       })()}
+                    </td>
+                    <td className="px-3">
+                      <span className={item.quantity < 10 ? 'text-red-600 font-bold' : 'text-green-600'}>
+                        {item.quantity < 10 ? 'Low Stock' : 'In Stock'}
+                      </span>
                     </td>
                     <td className="px-3">
                       <div className="flex gap-3">
@@ -197,7 +239,7 @@ const Home = () => {
                 ))}
                 {!loading && !error && filteredData.length === 0 && (
                   <tr>
-                    <td colSpan="11" className="text-center py-6 text-gray-400 italic">
+                    <td colSpan="12" className="text-center py-6 text-gray-400 italic">
                       No products match your search or filter.
                     </td>
                   </tr>
