@@ -13,7 +13,7 @@ const CartModel = require('./model/CartModel');
 const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
 const PrescriptionModel = require('./model/PrescriptionModel');
-const Contact = require('./model/ContactModel');
+const Contact = require('./model/Contact');
 const axios = require('axios');
 require('dotenv').config();
 // server.js or your Express app file
@@ -24,8 +24,12 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const XLSX = require('xlsx');
 const OpenAI = require('openai');
-const sharp = require('sharp')
-
+const sharp = require('sharp');
+const { 
+  generateVerificationToken, 
+  sendVerificationEmail, 
+  sendConfirmationEmails 
+} = require('./services/emailService'); 
 const app = express();
 const visionClient = new ImageAnnotatorClient();
 const saltRounds = 10;
@@ -679,10 +683,12 @@ app.post('/saveorder', authenticateJWT, async (req, res) => {
 });
 
 // Book consultation
+// Updated book consultation route
 app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req, res) => {
   try {
     const email = req.user.email;
     const { user, patient, location, slot } = req.body;
+    
     if (!user || !patient || !location || !slot || !req.file) {
       return res.status(400).json({ message: 'All fields and medical records file are required' });
     }
@@ -692,6 +698,7 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
     const parsedLocation = JSON.parse(location);
     const parsedSlot = JSON.parse(slot);
 
+    // Validation
     if (!parsedUser.name || !parsedUser.email || !parsedUser.phone) {
       return res.status(400).json({ message: 'User details (name, email, phone) are required' });
     }
@@ -704,6 +711,10 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
     if (!parsedSlot.date || !parsedSlot.time) {
       return res.status(400).json({ message: 'Slot details (date, time) are required' });
     }
+
+    // Generate verification token and expiry (24 hours from now)
+    const verificationToken = generateVerificationToken();
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     const consultation = new Consultation({
       user: {
@@ -728,11 +739,30 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
         time: parsedSlot.time
       },
       status: 'Pending',
-      createdBy: email
+      createdBy: email,
+      verificationToken,
+      verificationTokenExpires,
+      verificationStatus: false
     });
 
     await consultation.save();
-    res.status(200).json({ message: 'Consultation booked successfully! You will receive a confirmation soon.' });
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(consultation);
+      res.status(200).json({ 
+        message: 'Consultation booked successfully! Please check your email to verify your appointment.',
+        requiresVerification: true
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Still return success but mention email issue
+      res.status(200).json({ 
+        message: 'Consultation booked successfully, but there was an issue sending the verification email. Please contact support.',
+        requiresVerification: true
+      });
+    }
+
   } catch (error) {
     console.error('Error booking consultation:', error);
     if (error.name === 'ValidationError') {
@@ -744,6 +774,169 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
       return res.status(400).json({ message: 'Duplicate entry detected' });
     }
     res.status(500).json({ message: 'Failed to book consultation. Please try again.' });
+  }
+});
+
+app.get('/verify-consultation/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Find consultation by verification token
+    const consultation = await Consultation.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() }, // Token not expired
+      verificationStatus: false // Not already verified
+    });
+
+    if (!consultation) {
+      return res.status(400).json({ 
+        message: 'Invalid or expired verification link. Please contact support if you need assistance.' 
+      });
+    }
+
+    // Update consultation as verified
+    consultation.verificationStatus = true;
+    consultation.verifiedAt = new Date();
+    consultation.status = 'Confirmed';
+    // Optionally clear the token after verification
+    consultation.verificationToken = undefined;
+    consultation.verificationTokenExpires = undefined;
+
+    await consultation.save();
+
+    // Send confirmation emails to user and admin
+    try {
+      await sendConfirmationEmails(consultation);
+    } catch (emailError) {
+      console.error('Failed to send confirmation emails:', emailError);
+      // Continue with verification success even if emails fail
+    }
+
+    // Redirect to a success page or return JSON based on your frontend needs
+    // For API response:
+    res.status(200).json({ 
+      message: 'Consultation verified successfully! You will receive a confirmation email shortly.',
+      verified: true,
+      consultationId: consultation._id
+    });
+
+    // Or redirect to frontend success page:
+    // res.redirect(`${process.env.FRONTEND_URL}/verification-success?id=${consultation._id}`);
+
+  } catch (error) {
+    console.error('Error verifying consultation:', error);
+    res.status(500).json({ message: 'Failed to verify consultation. Please try again or contact support.' });
+  }
+});
+
+app.get('/cancel-consultation/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Find consultation by verification token
+    const consultation = await Consultation.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() }, // Token not expired
+      verificationStatus: false // Not already verified
+    });
+
+    if (!consultation) {
+      return res.status(400).json({ 
+        message: 'Invalid or expired cancellation link.' 
+      });
+    }
+
+    // Update consultation as cancelled
+    consultation.status = 'Cancelled';
+    consultation.verificationToken = undefined;
+    consultation.verificationTokenExpires = undefined;
+
+    await consultation.save();
+
+    // For API response:
+    res.status(200).json({ 
+      message: 'Consultation cancelled successfully.',
+      cancelled: true,
+      consultationId: consultation._id
+    });
+
+    // Or redirect to frontend cancellation page:
+    // res.redirect(`${process.env.FRONTEND_URL}/cancellation-success?id=${consultation._id}`);
+
+  } catch (error) {
+    console.error('Error cancelling consultation:', error);
+    res.status(500).json({ message: 'Failed to cancel consultation. Please try again.' });
+  }
+});
+
+// Route to get consultation status (optional - for frontend to check status)
+app.get('/consultation-status/:id', authenticateJWT, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userEmail = req.user.email;
+
+    const consultation = await Consultation.findOne({
+      _id: id,
+      createdBy: userEmail // Ensure user can only check their own consultations
+    });
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found.' });
+    }
+
+    res.status(200).json({
+      id: consultation._id,
+      status: consultation.status,
+      verificationStatus: consultation.verificationStatus,
+      verifiedAt: consultation.verifiedAt,
+      patientName: consultation.patient.name,
+      appointmentDate: consultation.slot.date,
+      appointmentTime: consultation.slot.time
+    });
+
+  } catch (error) {
+    console.error('Error fetching consultation status:', error);
+    res.status(500).json({ message: 'Failed to fetch consultation status.' });
+  }
+});
+
+// Route to resend verification email (optional)
+app.post('/resend-verification/:id', authenticateJWT, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userEmail = req.user.email;
+
+    const consultation = await Consultation.findOne({
+      _id: id,
+      createdBy: userEmail,
+      verificationStatus: false // Only if not already verified
+    });
+
+    if (!consultation) {
+      return res.status(404).json({ 
+        message: 'Consultation not found or already verified.' 
+      });
+    }
+
+    // Generate new verification token if expired
+    if (consultation.verificationTokenExpires < new Date()) {
+      consultation.verificationToken = generateVerificationToken();
+      consultation.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await consultation.save();
+    }
+
+    // Resend verification email
+    await sendVerificationEmail(consultation);
+
+    res.status(200).json({ 
+      message: 'Verification email sent successfully. Please check your email.' 
+    });
+
+  } catch (error) {
+    console.error('Error resending verification email:', error);
+    res.status(500).json({ 
+      message: 'Failed to resend verification email. Please try again.' 
+    });
   }
 });
 
@@ -1523,6 +1716,32 @@ app.put('/api/completeprescriptions/:id', authenticateJWT, async (req, res) => {
   }
 });
 
+
+//verified prescriptions
+app.get('/api/verifiedprescriptions', async (req, res) => {
+  try {
+    const all = await PrescriptionModel.find({ 
+      verificationStatus: { $in: ['verified'] }
+    }).sort({ uploadedAt: -1 });
+    res.status(200).json(all);
+  } catch (error) {
+    console.error('Failed to fetch prescriptions:', error);
+    res.status(500).json({ message: 'Error fetching delivery details' });
+  }
+});
+
+//completed prescriptions
+app.get('/api/completedprescriptions', async (req, res) => {
+  try {
+    const all = await PrescriptionModel.find({ 
+      verificationStatus: { $in: ['completed'] }
+    }).sort({ uploadedAt: -1 });
+    res.status(200).json(all);
+  } catch (error) {
+    console.error('Failed to fetch prescriptions:', error);
+    res.status(500).json({ message: 'Error fetching delivery details' });
+  }
+});
 
 
 

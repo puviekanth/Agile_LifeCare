@@ -103,6 +103,28 @@ const consultationSchema = new mongoose.Schema({
     },
     default: 'Pending'
   },
+  // New verification fields
+  verificationStatus: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: {
+    type: String,
+    required: false,
+    unique: true
+  },
+  verificationTokenExpires: {
+    type: Date,
+    required: false
+  },
+  verifiedAt: {
+    type: Date
+  },
+  createdBy: {
+    type: String,
+    required: true,
+    trim: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -111,5 +133,9 @@ const consultationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-const ConstulationModel = mongoose.model('Consultation', consultationSchema)
-module.exports = ConstulationModel;
+// Index for verification token
+consultationSchema.index({ verificationToken: 1 });
+consultationSchema.index({ verificationTokenExpires: 1 });
+
+const ConsultationModel = mongoose.model('Consultation', consultationSchema);
+module.exports = ConsultationModel;

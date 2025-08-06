@@ -23,6 +23,9 @@ import UploadList from './pages/UploadList';
 import ManualPrescriptions from './pages/ManualPrescriptions';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import VerifiedPrescriptions from './pages/VerifiedPrescriptions';
+import CompletedPrescription from './pages/CompletedPrescriptions';
+import VerifyConsultation from './pages/VerifyConsultation'; 
 
 
 function App() {
@@ -53,6 +56,9 @@ function App() {
           <Route path='/manual-presc' element={<ManualPrescriptions />} />
           <Route path='/contact-us' element={<ContactUs />} />
           <Route path='/about-us' element={<AboutUs />} />
+          <Route path='/veri-presc' element={<VerifiedPrescriptions />} />
+          <Route path='/comp-presc' element={<CompletedPrescription />} />
+          <Route path="/verify-consultation/:token" element={<VerifyConsultation />} />
         </Routes>
       </div>
       <Footer />
