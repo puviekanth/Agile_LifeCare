@@ -48,6 +48,7 @@ const EHeader = () => {
     { to: '/consultation', label: 'Book Consultation' },
     { to: '/prescription', label: 'Upload Prescription' },
     { to: '/contact-us', label: 'Contact Us' },
+    { to: '/about-us', label: 'About Us' },
   ];
 
   const getNavLinkClass = ({ isActive }) =>

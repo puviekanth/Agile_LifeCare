@@ -21,6 +21,8 @@ import UploadPrescription from './pages/UploadPrescription';
 import Prescriptions from './pages/Prescriptions';
 import UploadList from './pages/UploadList';
 import ManualPrescriptions from './pages/ManualPrescriptions';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 
 function App() {
@@ -49,6 +51,8 @@ function App() {
           <Route path='/prescriptions' element={<Prescriptions />} />
           <Route path='/upload-list' element={<UploadList />} />
           <Route path='/manual-presc' element={<ManualPrescriptions />} />
+          <Route path='/contact-us' element={<ContactUs />} />
+          <Route path='/about-us' element={<AboutUs />} />
         </Routes>
       </div>
       <Footer />
