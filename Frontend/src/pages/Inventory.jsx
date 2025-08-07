@@ -147,7 +147,8 @@ const Home = () => {
                 <tr className="text-left">
                   <th className="py-2 px-3">Image</th>
                   <th className="px-3">Medicine Name</th>
-                  <th className="px-3">Price (Rs.)</th>
+                  <th className="px-3">Unit Price (Rs.)</th>
+                  <th className="px-3">Selling Price (Rs.)</th>
                   <th className="px-3">OTC Status</th>
                   <th className="px-3">Supplier Name</th>
                   <th className="px-3">Quantity</th>
@@ -191,7 +192,8 @@ const Home = () => {
                         {item.productName}
                       </Link>
                     </td>
-                    <td className="px-3 font-semibold text-green-600">Rs. {item.price.toFixed(2)}</td>
+                    <td className="px-3 font-semibold text-green-600">Rs. {item.unitprice.toFixed(2)}</td>
+                    <td className="px-3 font-semibold text-green-600">Rs. {item.sellingprice.toFixed(2)}</td>
                     <td className="px-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${

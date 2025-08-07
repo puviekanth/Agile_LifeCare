@@ -3,14 +3,16 @@ const mongoose = require('mongoose');
 const medicineSchema = new mongoose.Schema({
     productName: String,
     description: String,
-    price: Number,
+    unitprice: Number,
+    sellingprice:Number,
     category: String,
     image: String,
     quantity:Number,
     manufactureDate:Date,
     expiryDate:Date,
     companyName:String,
-    supplierID:String
+    supplierID:String,
+    createdAt:{type:Date,default: Date.now},
   });
   
   // Create a model

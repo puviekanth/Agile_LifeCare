@@ -291,7 +291,7 @@ app.get('/getproducts', async (req, res) => {
 
 // Add new product
 app.post('/addproduct', uploadMedicine, async (req, res) => {
-  const { medicineName, price, otcStatus, companyName, quantity, description, manufactureDate, expiryDate } = req.body;
+  const { medicineName, unitprice, sellingprice , otcStatus, companyName, quantity, description, manufactureDate, expiryDate } = req.body;
   if (!req.file) return res.status(400).json({ message: 'Image is required' });
   const imagePath = req.file.path;
 
@@ -303,7 +303,8 @@ app.post('/addproduct', uploadMedicine, async (req, res) => {
     const medicine = new ProductModel({
       productName: medicineName,
       description,
-      price,
+      unitprice,
+      sellingprice,
       category: otcStatus,
       quantity,
       manufactureDate,

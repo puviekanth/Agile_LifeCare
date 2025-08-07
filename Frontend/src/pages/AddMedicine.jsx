@@ -9,7 +9,8 @@ const AddMedicine = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     medicineName: '',
-    price: '',
+    unitprice: '',
+    sellingprice:'',
     category: '',
     companyName: '',
     quantity: '',
@@ -35,7 +36,8 @@ const AddMedicine = () => {
 
     const newFormData = new FormData();
     newFormData.append('medicineName', formData.medicineName);
-    newFormData.append('price', formData.price);
+    newFormData.append('unitprice', formData.unitprice);
+    newFormData.append('sellingprice', formData.sellingprice);
     newFormData.append('otcStatus', formData.otcStatus);
     newFormData.append('companyName', formData.companyName);
     newFormData.append('quantity', formData.quantity);
@@ -100,11 +102,23 @@ const AddMedicine = () => {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (Rs.)</label>
               <input
                 type="number"
-                name="price"
-                value={formData.price}
+                name="unitprice"
+                value={formData.unitprice}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                placeholder="Price"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (Rs.)</label>
+              <input
+                type="number"
+                name="sellingprice"
+                value={formData.sellingprice}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400"
                 placeholder="Price"
