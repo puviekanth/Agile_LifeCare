@@ -46,13 +46,15 @@ const UploadList = () => {
         }
       });
 
+      // Updated to match backend response format
       setSuccess(
-        `${response.data.message} (Total: ${response.data.totalRecords}, Inserted/Updated: ${response.data.insertedOrUpdated}, Skipped Duplicates: ${response.data.skippedDuplicates}, Invalid: ${response.data.invalidRecords})`
+        `${response.data.message} (Total: ${response.data.totalRecords}, Inserted: ${response.data.inserted}, Failed: ${response.data.failedRecords}, Invalid: ${response.data.invalidRecords}, Duplicates: ${response.data.duplicateRecords})`
       );
       setError('');
       setDetails({
         invalidRecords: response.data.details.invalidRecords,
-        skippedDuplicates: response.data.details.skippedDuplicates
+        failedRecords: response.data.details.failedRecords,
+        duplicateRecords: response.data.details.duplicateRecords
       });
       setFile(null);
       document.getElementById('fileInput').value = '';
@@ -91,34 +93,7 @@ const UploadList = () => {
 
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
-          {details && (
-            <div className="mt-4 text-sm text-gray-700">
-              {details.invalidRecords?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold">Invalid Records:</h4>
-                  <ul className="list-disc pl-5">
-                    {details.invalidRecords.map((rec, index) => (
-                      <li key={index}>
-                        Row {rec.row}: {rec.reason} (Data: {JSON.stringify(rec.data)})
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {details.skippedDuplicates?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mt-2">Skipped Duplicates:</h4>
-                  <ul className="list-disc pl-5">
-                    {details.skippedDuplicates.map((dup, index) => (
-                      <li key={index}>
-                        {dup.genericname}: {dup.reason}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+          
 
           <button
             onClick={handleUpload}

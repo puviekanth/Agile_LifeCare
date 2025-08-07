@@ -26,6 +26,8 @@ import ContactUs from './pages/ContactUs';
 import VerifiedPrescriptions from './pages/VerifiedPrescriptions';
 import CompletedPrescription from './pages/CompletedPrescriptions';
 import VerifyConsultation from './pages/VerifyConsultation'; 
+import Analytics from './pages/Analytics';
+import Orders from './pages/Order'
 
 
 function App() {
@@ -59,6 +61,8 @@ function App() {
           <Route path='/veri-presc' element={<VerifiedPrescriptions />} />
           <Route path='/comp-presc' element={<CompletedPrescription />} />
           <Route path="/verify-consultation/:token" element={<VerifyConsultation />} />
+          <Route path='/analytics' element={<Analytics />} />
+          <Route path='/orders' element={<Orders />} />
         </Routes>
       </div>
       <Footer />

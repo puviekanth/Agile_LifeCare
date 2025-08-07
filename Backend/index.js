@@ -542,7 +542,11 @@ app.post('/api/contact', async (req, res) => {
 // Get OTC products
 app.get('/getproductsOTC', async (req, res) => {
   try {
-    const products = await ProductModel.find({ category: 'OTC' });
+    const currentDate = new Date();
+    const products = await ProductModel.find({
+    category: 'OTC',
+    expiryDate: { $gt: currentDate }
+    });
     res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -587,13 +591,38 @@ app.post('/addtocart', authenticateJWT, async (req, res) => {
       ProductPrice,
       ProductQuantity,
       Subtotal,
-      Image
+      Image,
+
     });
     await newItem.save();
     return res.status(200).json({ message: 'Product Added to Cart Successfully' });
   } catch (error) {
     console.log("Something went wrong in the server", error);
     return res.status(500).json({ error: 'Something went wrong in the server' });
+  }
+});
+
+app.put('/updatecart/:id', authenticateJWT, async (req, res) => {
+  try {
+    const { ProductQuantity, Subtotal } = req.body;
+    const cartItem = await CartModel.findById(req.params.id);
+    if (!cartItem) {
+      return res.status(404).json({ error: 'Cart item not found' });
+    }
+
+    // Optional: Validate stock availability
+    const product = await ProductModel.findById(cartItem.ProductId);
+    if (ProductQuantity > product.quantity) {
+      return res.status(400).json({ error: 'Requested quantity exceeds available stock' });
+    }
+
+    cartItem.ProductQuantity = ProductQuantity;
+    cartItem.Subtotal = Subtotal;
+    await cartItem.save();
+    res.json(cartItem);
+  } catch (err) {
+    console.error('Error updating cart:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -655,7 +684,7 @@ app.get('/getuser', authenticateJWT, async (req, res) => {
 
 // Save order
 app.post('/saveorder', authenticateJWT, async (req, res) => {
-  const { cartItems, email, deliveryMethod, deliveryDetails, orderToken } = req.body;
+  const { cartItems, email, deliveryMethod, deliveryDetails, orderToken , Total } = req.body;
   if (!cartItems || !email || !deliveryMethod) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
@@ -672,6 +701,7 @@ app.post('/saveorder', authenticateJWT, async (req, res) => {
       deliveryMethod,
       deliveryDetails: deliveryMethod === 'home' ? deliveryDetails : null,
       orderToken: deliveryMethod === 'instore' ? orderToken : null,
+      Total,
     });
     await newOrder.save();
     await CartModel.deleteMany({ email });
@@ -1066,8 +1096,11 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
 
     if (duplicateRecords.length > 0) {
       console.log('Duplicate genericname in Excel:', duplicateRecords);
-      await fs.writeFile('duplicate_records.json', JSON.stringify(duplicateRecords, null, 2))
-        .catch(err => console.error('Error saving duplicate records:', err));
+      try {
+        await fs.writeFile('duplicate_records.json', JSON.stringify(duplicateRecords, null, 2));
+      } catch (err) {
+        console.error('Error saving duplicate records:', err);
+      }
     }
 
     // Log and filter valid records
@@ -1094,7 +1127,11 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
     }
 
     if (validMedicines.length === 0) {
-      await fs.unlink(filePath);
+      try {
+        await fs.unlink(filePath);
+      } catch (err) {
+        console.error('Error deleting file:', err);
+      }
       return res.status(400).json({
         error: 'No valid data found in the Excel file',
         invalidRecords
@@ -1104,8 +1141,11 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
     // Log invalid records for debugging
     if (invalidRecords.length > 0) {
       console.log('Invalid records:', invalidRecords);
-      await fs.writeFile('invalid_records.json', JSON.stringify(invalidRecords, null, 2))
-        .catch(err => console.error('Error saving invalid records:', err));
+      try {
+        await fs.writeFile('invalid_records.json', JSON.stringify(invalidRecords, null, 2));
+      } catch (err) {
+        console.error('Error saving invalid records:', err);
+      }
     }
 
     // Insert all records (no upsert, allow duplicates)
@@ -1137,8 +1177,11 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
     // Log failed records
     if (failedRecords.length > 0) {
       console.log('Failed records:', failedRecords);
-      await fs.writeFile('failed_records.json', JSON.stringify(failedRecords, null, 2))
-        .catch(err => console.error('Error saving failed records:', err));
+      try {
+        await fs.writeFile('failed_records.json', JSON.stringify(failedRecords, null, 2));
+      } catch (err) {
+        console.error('Error saving failed records:', err);
+      }
     }
 
     // Verify final collection count
@@ -1146,7 +1189,11 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
     console.log('Final collection count:', finalCount);
 
     // Clean up uploaded file
-    await fs.unlink(filePath);
+    try {
+      await fs.unlink(filePath);
+    } catch (err) {
+      console.error('Error deleting uploaded file:', err);
+    }
 
     res.json({
       message: 'Medicines processed successfully',
@@ -1164,33 +1211,14 @@ app.post('/api/upload-nmra', authenticateJWT, uploadList.single('file'), async (
       }
     });
 
-    // Alternative: Merge duplicates (uncomment to use)
-    /*
-    const uniqueMedicines = [];
-    const genericNameMap = new Map();
-    for (const med of validMedicines) {
-      if (!genericNameMap.has(med.genericname)) {
-        genericNameMap.set(med.genericname, med);
-        uniqueMedicines.push(med);
-      } else {
-        genericNameMap.get(med.genericname).brandname = med.brandname;
-        genericNameMap.get(med.genericname).dosagecode = med.dosagecode;
-      }
-    }
-    const batch = uniqueMedicines.map(med => ({
-      updateOne: {
-        filter: { genericname: med.genericname },
-        update: { $set: med },
-        upsert: true
-      }
-    }));
-    const result = await NMRAmodel.bulkWrite(batch, { ordered: false });
-    insertedOrUpdatedCount = result.upsertedCount + result.modifiedCount;
-    */
   } catch (error) {
     console.error('Error uploading medicines:', error);
     if (req.file) {
-      await fs.unlink(req.file.path).catch(err => console.error('Error deleting file:', err));
+      try {
+        await fs.unlink(req.file.path);
+      } catch (err) {
+        console.error('Error deleting file:', err);
+      }
     }
     res.status(500).json({
       error: `Failed to upload medicines: ${error.message}`,

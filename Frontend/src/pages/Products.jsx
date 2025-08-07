@@ -5,11 +5,11 @@ import axios from 'axios';
 import EHeader from '../components/EHeader';
 import { Link, useNavigate } from 'react-router-dom';
 
-const categories = ['All', 'Vitamins', 'Foods', 'Sanitary', 'Cosmetics', 'Supplements'];
+const categories = ['All', 'Vitamins', 'Foods', 'Sanitary', 'Cosmetics', 'Supplements', 'OTC'];
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [priceRange, setPriceRange] = useState(100);
+  const [priceRange, setPriceRange] = useState(1000);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -27,20 +27,23 @@ const Products = () => {
         let result = Array.isArray(response.data) ? response.data : [];
         console.log('Fetched products:', result);
 
+        // Apply filters
+        let filtered = result;
         if (searchTerm) {
-          result = result.filter(product =>
-            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+          filtered = filtered.filter(product =>
+            (product.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (product.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
           );
         }
 
         if (selectedCategory !== 'All') {
-          result = result.filter(product => product.category === selectedCategory);
+          filtered = filtered.filter(product => product.category === selectedCategory);
         }
 
-        result = result.filter(product => product.price <= priceRange);
+        filtered = filtered.filter(product => product.price <= priceRange);
 
-        setFilteredProducts(result);
+        console.log('Filtered products:', filtered);
+        setFilteredProducts(filtered);
         setError(null);
       } catch (err) {
         console.error('API Error:', err.message, err.response?.status, err.response?.data);
@@ -56,7 +59,7 @@ const Products = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setPriceRange(100);
+    setPriceRange(1000);
     setSelectedCategory('All');
   };
 
@@ -91,16 +94,14 @@ const Products = () => {
     })
     .then(response => {
       console.log('Added to cart successfully', response.data);
-      // Update local state to reflect reduced quantity
       setFilteredProducts(prevProducts =>
         prevProducts.map(p => p._id === product._id ? { ...p, quantity: p.quantity - 1 } : p)
       );
     })
     .catch(error => {
       console.log('Error adding to cart', error.response?.data?.error || error.message);
-      // Re-fetch products if the server update fails to sync state
-      if (error.response?.status !== 400) { // Avoid re-fetch on out-of-stock
-        setFilteredProducts([]); // Reset or re-fetch could be implemented here
+      if (error.response?.status !== 400) {
+        setFilteredProducts([]);
         setError('Failed to add item. Please try again.');
       }
     });
@@ -168,14 +169,14 @@ const Products = () => {
                     <input
                       type="range"
                       min="1"
-                      max="100"
+                      max="1000"
                       value={priceRange}
                       onChange={(e) => setPriceRange(e.target.value)}
                       className="w-full h-2 bg-blue-200 rounded-lg cursor-pointer accent-blue-600"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-2">
                       <span>LKR 1</span>
-                      <span>LKR 100+</span>
+                      <span>LKR 1000</span>
                     </div>
                   </div>
                   
@@ -205,7 +206,7 @@ const Products = () => {
           </AnimatePresence>
         </div>
 
-        {(searchTerm || selectedCategory !== 'All' || priceRange < 100) && (
+        {(searchTerm || selectedCategory !== 'All' || priceRange < 1000) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -245,7 +246,7 @@ const Products = () => {
               </motion.span>
             )}
             
-            {priceRange < 100 && (
+            {priceRange < 1000 && (
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -254,7 +255,7 @@ const Products = () => {
                 Max Price: LKR {priceRange}
                 <motion.button 
                   whileHover={{ scale: 1.1 }}
-                  onClick={() => setPriceRange(100)}
+                  onClick={() => setPriceRange(1000)}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
                   <FiX size={16} />
@@ -298,55 +299,79 @@ const Products = () => {
             }}
           >
             {filteredProducts.map((product) => (
-              <Link to={`/view/${product._id}`} key={product._id}>
-                <motion.div 
-                  variants={cardVariants}
-                  whileHover="hover"
-                  className="bg-white shadow-lg border border-gray-400 overflow-hidden p-2"
-                >
-                  <div className="h-56 bg-white flex items-center justify-center overflow-hidden">
-                    <motion.img 
-                      src={`${api}/${product.image}`} 
-                      alt={product.productName} 
-                      className="h-full w-full object-contain"
-                      onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                  <div className="p-5">
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
-                      {product.category}
-                    </span>
-                    <h3 className="font-semibold text-lg mt-3 text-gray-800 line-clamp-2">{product.productName}</h3>
-                    {product.rating && (
-                      <div className="flex items-center mt-2">
-                        {[...Array(5)].map((_, i) => (
-                          <FiStar 
-                            key={i} 
-                            fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'} 
-                            className="w-5 h-5 text-yellow-400"
-                          />
-                        ))}
-                        <span className="text-sm text-gray-500 ml-2 font-medium">
-                          {product.rating.toFixed(1)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="font-bold text-xl text-gray-800">LKR {product.price.toFixed(2)}</span>
-                      <motion.button 
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors duration-300"
-                        onClick={(e) => { e.preventDefault(); handleAddToCart(product); }}
-                      >
-                        <FiShoppingCart size={18} />
-                      </motion.button>
+              <div key={product._id} className={`relative ${product.quantity <= 0 ? 'pointer-events-none opacity-50' : ''}`}>
+                <Link to={`/view/${product._id}`} className={product.quantity <= 0 ? 'pointer-events-none' : ''}>
+                  <motion.div 
+                    variants={cardVariants}
+                    whileHover={product.quantity > 0 ? "hover" : ""}
+                    className="bg-white shadow-lg border border-gray-400 overflow-hidden p-2"
+                  >
+                    <div className="h-56 bg-white flex items-center justify-center overflow-hidden">
+                      <motion.img 
+                        src={`${api}/${product.image}`} 
+                        alt={product.productName} 
+                        className="h-full w-full object-contain"
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                        whileHover={product.quantity > 0 ? { scale: 1.05 } : {}}
+                        transition={{ duration: 0.3 }}
+                      />
                     </div>
+                    <div className="p-5">
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                        {product.category}
+                      </span>
+                      <h3 className="font-semibold text-lg mt-3 text-gray-800 line-clamp-2">{product.productName}</h3>
+                      {product.rating && (
+                        <div className="flex items-center mt-2">
+                          {[...Array(5)].map((_, i) => (
+                            <FiStar 
+                              key={i} 
+                              fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'} 
+                              className="w-5 h-5 text-yellow-400"
+                            />
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2 font-medium">
+                            {product.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="mt-4 flex justify-between items-center">
+                        <div>
+                          <span className="font-bold text-xl text-gray-800">LKR {product.price.toFixed(2)}</span>
+                          <div className="mt-2">
+                            <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${
+                              product.quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                            </span>
+                          </div>
+                        </div>
+                        <motion.button 
+                          whileHover={product.quantity > 0 ? { scale: 1.1 } : {}}
+                          whileTap={product.quantity > 0 ? { scale: 0.9 } : {}}
+                          className={`p-3 rounded-full transition-colors duration-300 ${
+                            product.quantity > 0 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          }`}
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            if (product.quantity > 0) handleAddToCart(product); 
+                          }}
+                          disabled={product.quantity <= 0}
+                        >
+                          <FiShoppingCart size={18} />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </Link>
+                {product.quantity <= 0 && (
+                  <div className="absolute inset-0 bg-gray-200 bg-opacity-50 flex items-center justify-center">
+                    <span className="text-red-600 font-semibold">Out of Stock</span>
                   </div>
-                </motion.div>
-              </Link>
+                )}
+              </div>
             ))}
           </motion.div>
         ) : (

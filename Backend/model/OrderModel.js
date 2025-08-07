@@ -21,6 +21,8 @@ const OrderSchema = new mongoose.Schema({
   },
   orderToken: String,
   createdAt: { type: Date, default: Date.now },
+  Total:{type:Number,required:true},
+  status:{type:String, enum: ['pending, processig, completed']}
 });
 
 const OrderModel = mongoose.model('order', OrderSchema);

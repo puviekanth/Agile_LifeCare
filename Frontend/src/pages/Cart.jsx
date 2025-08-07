@@ -11,6 +11,7 @@ const CartPage = () => {
   const [error, setError] = useState('');
   const api = 'http://localhost:3000';
   const navigate = useNavigate();
+  const [totalCost , setTotalCost] = useState('');
 
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -40,12 +41,42 @@ const CartPage = () => {
     };
 
     fetchCartItems();
-  }, []);
+  }, [navigate]);
 
-  const handleQuantityChange = (id, newQuantity) => {
-    setCartItems(cartItems.map(item =>
-      item._id === id ? { ...item, ProductQuantity: Math.max(1, newQuantity) } : item
-    ));
+  const handleQuantityChange = async (id, newQuantity) => {
+    const quantity = Math.max(1, parseInt(newQuantity) || 1); // Ensure quantity is at least 1
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('Unauthorized access');
+        navigate('/login');
+        return;
+      }
+
+      // Find the item to get ProductPrice for Subtotal calculation
+      const item = cartItems.find(item => item._id === id);
+      if (!item) {
+        setError('Cart item not found');
+        return;
+      }
+
+      // Update backend
+      await axios.put(`${api}/updatecart/${id}`, {
+        ProductQuantity: quantity,
+        Subtotal: item.ProductPrice * quantity
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Update local state
+      setCartItems(cartItems.map(item =>
+        item._id === id ? { ...item, ProductQuantity: quantity, Subtotal: item.ProductPrice * quantity } : item
+      ));
+      setError('');
+    } catch (error) {
+      console.error('Error updating cart item:', error.response?.data?.error || error.message);
+      setError('Failed to update quantity. Please try again.');
+    }
   };
 
   const calculateSubtotal = (ProductPrice, ProductQuantity) => ProductPrice * ProductQuantity;
@@ -84,12 +115,12 @@ const CartPage = () => {
 
   const calculateTotalCartCost = () => {
     const deliveryFee = 600;
-    return (parseFloat(calculateTotal()) + deliveryFee).toFixed(2);
+     return (parseFloat(calculateTotal()) + deliveryFee).toFixed(2);
   };
 
-  const handleCheckout = () =>{
+  const handleCheckout = () => {
     navigate('/checkout');
-  }
+  };
 
   return (
     <div className="flex flex-col min-h-screen" role="main" aria-label="Shopping Cart">
@@ -133,12 +164,13 @@ const CartPage = () => {
                             src={`${api}/${item.Image}`}
                             alt={`${item.ProductName} image`}
                             className="w-20 h-20 object-cover rounded"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
                           />
                         </td>
                         <td className="p-4 max-w-xs">
-                          <a href={`/product/${item._id}`} className="text-gray-800 font-medium hover:underline">
+                          <Link to={`/product/${item._id}`} className="text-gray-800 font-medium hover:underline">
                             {item.ProductName}
-                          </a>
+                          </Link>
                         </td>
                         <td className="p-4 text-gray-800">{item.ProductPrice.toFixed(2)}</td>
                         <td className="p-4">
@@ -176,7 +208,8 @@ const CartPage = () => {
                     </tr>
                   </tbody>
                 </table>
-                <button onClick={handleCheckout}
+                <button
+                  onClick={handleCheckout}
                   className="w-full bg-blue-600 text-white py-3 rounded-md mt-6 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label="Proceed to Checkout"
                 >

@@ -79,6 +79,7 @@ const Checkout = () => {
           email: userEmail,
           deliveryMethod: 'instore',
           orderToken: token,
+          Total:total,
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -91,6 +92,17 @@ const Checkout = () => {
 };
 
   
+  
+
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setDeliveryDetails((prev) => ({ ...prev, [name]: value }));
+  };
+
+  
+  const total = cartItems.reduce((sum, item) => sum + item.Subtotal, 0);
+
   const handleDeliveryFormSubmit = async (e) => {
     e.preventDefault();
     
@@ -107,7 +119,7 @@ const Checkout = () => {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const userEmail = userResponse.data.email;
-
+      console.log(total);
       await axios.post(
         `${api}/saveorder`,
         {
@@ -115,6 +127,7 @@ const Checkout = () => {
           email: userEmail,
           deliveryMethod: 'home',
           deliveryDetails,
+          Total:total,
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -125,15 +138,6 @@ const Checkout = () => {
       setError('Failed to process delivery order. Please try again.');
     }
   };
-
-  
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setDeliveryDetails((prev) => ({ ...prev, [name]: value }));
-  };
-
-  
-  const total = cartItems.reduce((sum, item) => sum + item.Subtotal, 0);
 
   
   const modalVariants = {

@@ -12,9 +12,10 @@ const Header = () => {
     { to: "/bill", label: "Bill Products" },
     { to: "/inventory", label: "Inventory" },
     { to: "/suppliers", label: "Suppliers" },
-    { to: "/reports", label: "Reports" },
     { to:'/prescriptions', label:'Prescriptions'},
-    { to:'/upload-list' , label:'Upload Verified Medicine List'}
+    { to:'/orders' , label:'Orders' },
+    { to:'/upload-list' , label:'Upload Verified Medicine List'},
+    { to:'/analytics' , label:'Analytics'}
   ];
 
   // Common styles for NavLink
