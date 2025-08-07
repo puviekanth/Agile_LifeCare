@@ -14,6 +14,8 @@ const OrderModel = require('./model/OrderModel');
 const Consultation = require('./model/ConsultationModel'); // Import Consultation model
 const PrescriptionModel = require('./model/PrescriptionModel');
 const Contact = require('./model/Contact');
+const DoctorModel = require('./model/DoctorModel');
+const Bill = require('./model/BillingModel');
 const axios = require('axios');
 require('dotenv').config();
 // server.js or your Express app file
@@ -223,7 +225,7 @@ app.post('/signup', async (req, res) => {
         address,
       });
       res.status(200).json({ message: 'Admin User Created Successfully', user: adminUser });
-    } else {
+    } else if(email.endsWith('@gmail.com')){
       const newUser = await CustomerModel.create({
         name,
         password: encryptedPassword,
@@ -232,6 +234,16 @@ app.post('/signup', async (req, res) => {
         address,
       });
       res.status(200).json({ message: 'Customer Created Successfully', user: newUser });
+    }
+    else if(email.endsWith('.doc@gmail.com')){
+      const doctor = await DoctorModel.create({
+        name,
+        password: encryptedPassword,
+        email,
+        phone,
+        address,
+      });
+      res.status(200).json({ message: 'Customer Created Successfully', user: doctor });
     }
   } catch (e) {
     if (e.code === 11000) {
@@ -259,8 +271,21 @@ app.post('/login', async (req, res) => {
       } else {
         return res.status(401).json({ error: 'Invalid username or password' });
       }
-    } else {
+    } else if(email.endsWith('@gmail.com')){
       const user = await CustomerModel.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: 'No User Found, please register.' });
+      }
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (isMatch) {
+        const token = jwt.sign({ email: user.email }, secretKey, { expiresIn: '1h' });
+        return res.status(200).json({ message: 'Logged in successfully', token, user });
+      } else {
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
+    }
+    else if(email.endsWith('.doc@gmail.com')){
+      const user = await DoctorModel.findOne({ email });
       if (!user) {
         return res.status(404).json({ error: 'No User Found, please register.' });
       }
@@ -1771,6 +1796,372 @@ app.get('/api/completedprescriptions', async (req, res) => {
     res.status(500).json({ message: 'Error fetching delivery details' });
   }
 });
+
+
+
+// Get all orders (admin only)
+app.get('/api/getorders', authenticateJWT, async (req, res) => {
+  try {
+    const { email, role } = req.user; // Assuming authenticateJWT sets req.user
+    if (!email) {
+      return res.status(401).json({ success: false, message: 'Unauthorized access. No user email found.' });
+    }
+
+    const orders = await OrderModel.find();
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error.message);
+    res.status(500).json({ success: false, message: 'Server error fetching orders' });
+  }
+});
+
+//update order status
+app.put('/api/orders/:orderId/status', authenticateJWT, async (req,res)=> {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['pending', 'processing', 'completed'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status value' });
+  }
+
+  try {
+    const updatedOrder = await OrderModel.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    return res.status(200).json({ success: true, order: updatedOrder });
+  } catch (err) {
+    console.error('Error updating order status:', err);
+    return res.status(500).json({ success: false, message: 'Server error while updating order status' });
+  }
+});
+
+//get pending orders
+app.get('/api/getpendingorders', authenticateJWT, async (req, res) => {
+  try {
+    const { email, role } = req.user; // Assuming authenticateJWT sets req.user
+    if (!email) {
+      return res.status(401).json({ success: false, message: 'Unauthorized access. No user email found.' });
+    }
+
+    const orders = await OrderModel.find({status:'pending'});
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error.message);
+    res.status(500).json({ success: false, message: 'Server error fetching orders' });
+  }
+});
+
+//get processing orders
+app.get('/api/getprocessingorders', authenticateJWT, async (req, res) => {
+  try {
+    const { email, role } = req.user; // Assuming authenticateJWT sets req.user
+    if (!email) {
+      return res.status(401).json({ success: false, message: 'Unauthorized access. No user email found.' });
+    }
+
+    const orders = await OrderModel.find({status:'processing'});
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error.message);
+    res.status(500).json({ success: false, message: 'Server error fetching orders' });
+  }
+});
+
+//get completed orders
+app.get('/api/getcompletedorders', authenticateJWT, async (req, res) => {
+  try {
+    const { email, role } = req.user; // Assuming authenticateJWT sets req.user
+    if (!email) {
+      return res.status(401).json({ success: false, message: 'Unauthorized access. No user email found.' });
+    }
+
+    const orders = await OrderModel.find({status:'completed'});
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error.message);
+    res.status(500).json({ success: false, message: 'Server error fetching orders' });
+  }
+});
+
+
+// POST /savebill - Save a new bill to database
+app.post('/savebill', async (req, res) => {
+  try {
+    const {
+      customerName,
+      customerPhone,
+      items,
+      totalAmount,
+      billDate,
+      paymentMethod
+    } = req.body;
+
+    // Validation
+    if (!items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bill must contain at least one item'
+      });
+    }
+
+    if (!totalAmount || totalAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total amount must be greater than 0'
+      });
+    }
+
+    // Validate each item
+    for (const item of items) {
+      if (!item.productId || !item.productName || !item.quantity || !item.sellingPrice) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each item must have productId, productName, quantity, and unitPrice'
+        });
+      }
+      
+      if (item.quantity <= 0 || item.sellingPrice < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid quantity or price in items'
+        });
+      }
+    }
+
+    // Create new bill
+    const newBill = new Bill({
+      customerName: customerName || 'Walk-in Customer',
+      customerPhone: customerPhone || '',
+      items: items,
+      totalAmount: totalAmount,
+      billDate: billDate ? new Date(billDate) : new Date(),
+      paymentMethod: paymentMethod || 'cash'
+    });
+
+    // Save to database
+    const savedBill = await newBill.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Bill saved successfully',
+      billId: savedBill.billId,
+      data: savedBill
+    });
+
+  } catch (error) {
+    console.error('Error saving bill:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: validationErrors
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bill ID already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while saving bill'
+    });
+  }
+});
+
+
+// GET summary of prescriptions and financials
+app.get('/api/summary', async (req, res) => {
+  try {
+    // Get date range from query params (default to current month)
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2025-08-01');
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2025-08-31T23:59:59.999Z');
+
+    // Validate dates
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // Aggregate prescription counts by status
+    const prescriptionSummary = await PrescriptionModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: '$verificationStatus',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Format prescription counts
+    const counts = {
+      uploaded: ((await (PrescriptionModel.find())).length),
+      verified: 0,
+      completed: 0,
+      processing: 0,
+     
+    };
+    prescriptionSummary.forEach((item) => {
+      counts[item._id] = item.count;
+    });
+
+    // Calculate total sales from OrderModel and BillModel
+    const [orderSales, billSales] = await Promise.all([
+      OrderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalSales: { $sum: '$Total' },
+          },
+        },
+      ]),
+      Bill.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalSales: { $sum: '$totalAmount' },
+          },
+        },
+      ])
+    ]);
+
+    const totalOrderSales = orderSales.length > 0 ? orderSales[0].totalSales : 0;
+    const totalBillSales = billSales.length > 0 ? billSales[0].totalSales : 0;
+    const totalSales = totalOrderSales + totalBillSales;
+
+    // Calculate total cost from medicines
+    const medicines = await ProductModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCost: {
+            $sum: { $multiply: ['$quantity', '$unitprice'] },
+          },
+        },
+      },
+    ]);
+
+    const totalCost = medicines.length > 0 ? medicines[0].totalCost : 0;
+    const totalProfit = totalSales - totalCost;
+
+    // Send response
+    res.json({
+      prescriptions: counts,
+      financials: {
+        totalSales,
+        totalExpenses: totalCost,
+        totalProfit,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching summary:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get orders within date range
+app.get('/api/anaorders', async (req, res) => {
+  try {
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2025-08-01');
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2025-08-31T23:59:59.999Z');
+
+    // Validate dates
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // Fetch orders
+    const orders = await OrderModel.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).select('createdAt Total');
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get bills within date range
+app.get('/api/anabills', async (req, res) => {
+  try {
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2025-08-01');
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2025-08-31T23:59:59.999Z');
+
+    // Validate dates
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // Fetch bills
+    const bills = await Bill.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).select('createdAt totalAmount');
+
+    res.json(bills);
+  } catch (error) {
+    console.error('Error fetching bills:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+//bar chart - online orders
+app.get('/api/orderstats', async (req, res) => {
+  try {
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date('2025-08-01');
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date('2025-08-31T23:59:59.999Z');
+
+    // Validate dates
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    // Fetch orders with status
+    const orders = await OrderModel.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).select('createdAt status Total'); // Include status and Total
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching order stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 
 

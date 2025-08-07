@@ -22,7 +22,12 @@ const OrderSchema = new mongoose.Schema({
   orderToken: String,
   createdAt: { type: Date, default: Date.now },
   Total:{type:Number,required:true},
-  status:{type:String, enum: ['pending, processig, completed']}
+  status: {
+  type: String,
+  enum: ['pending', 'processing', 'completed'],
+  default: 'pending'
+}
+
 });
 
 const OrderModel = mongoose.model('order', OrderSchema);

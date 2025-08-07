@@ -1,0 +1,94 @@
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.summary-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem; /* Match .card padding */
+}
+
+.summary-section {
+  margin-bottom: 2rem; /* Match .card padding */
+}
+
+.summary-container h2 {
+  text-align: center;
+  color: #646cff; /* Match logo hover color */
+  font-size: 1.8rem; /* Consistent with app’s modern look */
+}
+
+.summary-section h3 {
+  color: #646cff; /* Match logo hover color */
+  margin-bottom: 1rem;
+}
+
+.summary-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.summary-section li {
+  font-size: 1rem; /* Match typical text size */
+  margin-bottom: 0.5rem;
+  color: #888; /* Match .read-the-docs */
+}
+
+.error {
+  color: #ff4d4f; /* Softer red to match modern aesthetic */
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.date-range {
+  margin-bottom: 1rem;
+}
+.date-range label {
+  margin-right: 1rem;
+}
+.date-range input {
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

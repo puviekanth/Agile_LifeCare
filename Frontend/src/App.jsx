@@ -27,7 +27,10 @@ import VerifiedPrescriptions from './pages/VerifiedPrescriptions';
 import CompletedPrescription from './pages/CompletedPrescriptions';
 import VerifyConsultation from './pages/VerifyConsultation'; 
 import Analytics from './pages/Analytics';
-import Orders from './pages/Order'
+import Orders from './pages/Order';
+import PendingOrders from './pages/PendingOrders';
+import ProcessingOrders from './pages/ProcessingOrders';
+import CompletedOrders from './pages/CompletedOrders';
 
 
 function App() {
@@ -63,6 +66,9 @@ function App() {
           <Route path="/verify-consultation/:token" element={<VerifyConsultation />} />
           <Route path='/analytics' element={<Analytics />} />
           <Route path='/orders' element={<Orders />} />
+          <Route path='/pending-orders' element={<PendingOrders />} />
+          <Route path='/processing-orders' element={<ProcessingOrders />} />
+          <Route path='/comp-orders' element={<CompletedOrders />} />
         </Routes>
       </div>
       <Footer />

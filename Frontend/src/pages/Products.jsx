@@ -40,7 +40,7 @@ const Products = () => {
           filtered = filtered.filter(product => product.category === selectedCategory);
         }
 
-        filtered = filtered.filter(product => product.price <= priceRange);
+        filtered = filtered.filter(product => product.sellingprice <= priceRange);
 
         console.log('Filtered products:', filtered);
         setFilteredProducts(filtered);
@@ -85,9 +85,9 @@ const Products = () => {
     axios.post(`${api}/addtocart`, {
       productId: product._id,
       ProductName: product.productName,
-      ProductPrice: product.price,
+      ProductPrice: product.sellingprice,
       ProductQuantity: 1,
-      Subtotal: product.price * 1,
+      Subtotal: product.sellingprice * 1,
       Image: product.image,
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -337,7 +337,7 @@ const Products = () => {
                       )}
                       <div className="mt-4 flex justify-between items-center">
                         <div>
-                          <span className="font-bold text-xl text-gray-800">LKR {product.price.toFixed(2)}</span>
+                          <span className="font-bold text-xl text-gray-800">LKR {product.sellingprice.toFixed(2)}</span>
                           <div className="mt-2">
                             <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${
                               product.quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

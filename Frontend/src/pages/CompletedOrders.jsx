@@ -27,7 +27,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await axios.get(`${api}/api/getorders`, {
+      const response = await axios.get(`${api}/api/getcompletedorders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -210,7 +210,7 @@ const Orders = () => {
           <div className="flex space-x-3 bg-gray-100 p-2 rounded-xl shadow-md">
             <button
               onClick={() => navigate('/orders')}
-              className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 bg-blue-600 text-white shadow-md"
+              className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 bg-transparent text-gray-700 hover:bg-gray-200"
             >
               All Orders
             </button>
@@ -228,7 +228,7 @@ const Orders = () => {
             </button>
             <button
               onClick={() => navigate('/comp-orders')}
-              className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 bg-transparent text-gray-700 hover:bg-gray-200"
+              className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 bg-blue-600 text-white shadow-md"
             >
               Completed Orders
             </button>

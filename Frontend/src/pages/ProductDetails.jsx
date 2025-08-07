@@ -33,8 +33,8 @@ const ProductDetails = () => {
     }
   }, [id]);
 
-  const totalValue = product.price && product.quantity
-    ? (product.price * product.quantity).toFixed(2)
+  const totalValue = product.sellingprice && product.quantity
+    ? (product.sellingprice * product.quantity).toFixed(2)
     : '0.00';
 
   const handleChange = (e) => {
@@ -50,7 +50,7 @@ const ProductDetails = () => {
     e.preventDefault();
     const data = new FormData();
     data.append('productName', formData.productName || '');
-    data.append('price', formData.price || '');
+    data.append('price', formData.sellingprice || '');
     data.append('quantity', formData.quantity || '');
     data.append('companyName', formData.companyName || '');
     data.append('category', formData.category || '');
@@ -106,7 +106,7 @@ const ProductDetails = () => {
             <div className="mt-4">
               <p className="text-sm text-gray-500">Price</p>
               <p className="text-lg font-semibold text-green-600">
-                Rs. {parseFloat(product?.price || 0).toFixed(2)}
+                Rs. {parseFloat(product?.sellingprice || 0).toFixed(2)}
               </p>
             </div>
             <div className="mt-2">
