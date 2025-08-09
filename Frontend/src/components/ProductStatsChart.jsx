@@ -16,12 +16,12 @@ const ProductStatsChart = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const api = import.meta.env.VITE_API;
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/product-stats');
+        const response = await axios.get(`${api}/api/product-stats`);
         setStats(response.data);
         setError(null);
       } catch (err) {

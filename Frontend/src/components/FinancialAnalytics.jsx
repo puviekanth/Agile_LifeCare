@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const FinancialSummary = () => {
+
+  const api=import.meta.env.VITE_API;
   const [summary, setSummary] = useState({
     prescriptions: {
       uploaded: 0,
@@ -30,7 +32,7 @@ const FinancialSummary = () => {
           return;
         }
 
-        const response = await axios.get('http://localhost:3000/api/summary', {
+        const response = await axios.get(`${api}/api/summary`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

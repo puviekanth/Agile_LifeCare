@@ -12,7 +12,7 @@ function Signup() {
   const [ address , setAddress] = useState('');
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const navigate = useNavigate();
 
   const validateForm = () => {

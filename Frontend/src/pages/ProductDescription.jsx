@@ -17,7 +17,7 @@ const ProductDetails = () => {
   const [cartSuccess, setCartSuccess] = useState(false);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState(null);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   useEffect(() => {
     if (id) {

@@ -37,8 +37,8 @@ const {
 const ConsultationModel = require('./model/ConsultationModel');
 const app = express();
 const visionClient = new ImageAnnotatorClient();
-const saltRounds = 10;
-const secretKey = 'lifecare/AGILE/y3s2';
+const saltRounds = process.env.SALTROUNDS;
+const secretKey = process.env.SECRETKEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_GEOCODING_API;
 const MONGODB=process.env.MONGODB;
 

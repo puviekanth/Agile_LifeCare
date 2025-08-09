@@ -28,7 +28,7 @@ const PatientHistoryInterface = () => {
   const [error, setError] = useState(null);
   const [expandedConsultations, setExpandedConsultations] = useState({});
 
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const token = localStorage.getItem('token') || 'your-jwt-token-here'; // Basic token management
 
   const calculateAge = (dob) => {

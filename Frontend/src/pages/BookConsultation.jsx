@@ -28,7 +28,7 @@ const BookConsultation = () => {
   const [success, setSuccess] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const googleApiKey = import.meta.env.VITE_GOOGLE_GEOCODING_API;
 
   

@@ -31,7 +31,7 @@ const OrderStats = () => {
         const startDate = new Date('2025-08-01');
         const endDate = new Date('2025-08-31T23:59:59.999Z');
 
-        const BASE_URL = 'http://localhost:3000';
+        const BASE_URL = import.meta.env.VITE_API;
         const response = await fetch(`${BASE_URL}/api/orderstats?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
         if (!response.ok) throw new Error(`Orders fetch failed: ${response.statusText}`);
         const orders = await response.json();

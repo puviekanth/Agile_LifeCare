@@ -13,7 +13,7 @@ const DoctorInterface = () => {
   // You need to replace this with your actual JWT token
   // In production, get this from localStorage, context, or other secure storage
   const token = localStorage.getItem('token');
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   // Mock consultation data for demonstration
   const mockConsultations = [

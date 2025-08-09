@@ -8,7 +8,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors,setErrors] = useState('');
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const [success,setSuccess] = useState('');
 
   const navigate = useNavigate();
@@ -81,7 +81,6 @@ const validateform = () =>{
               required
               className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
-            <Link to='#' className='text-blue-400 underline'>Forgot Password ?</Link>
           </div>
           <div>
             <label className="block font-semibold mb-1">New Password</label>

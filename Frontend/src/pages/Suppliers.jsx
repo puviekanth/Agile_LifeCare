@@ -12,7 +12,7 @@ const Suppliers = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
   const [suppliers, setSuppliers] = useState([]);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [id, setId] = useState('');

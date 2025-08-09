@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [error, setError] = useState('');
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const navigate = useNavigate();
   const [totalCost , setTotalCost] = useState('');
 

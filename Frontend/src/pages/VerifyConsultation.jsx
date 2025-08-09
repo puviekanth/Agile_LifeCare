@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const VerifyConsultation = () => {
   const { token } = useParams();
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const [success,setSuccess] = useState(false);
   const [isError,setError] = useState(false);
 

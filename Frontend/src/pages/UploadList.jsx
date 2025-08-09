@@ -8,7 +8,7 @@ const UploadList = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [details, setDetails] = useState(null);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   const handleFileChange = (e) => {
     const uploadedFile = e.target.files[0];

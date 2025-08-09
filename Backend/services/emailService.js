@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config();
+const adminEmail=process.env.AdminEmail;
 
 require('dotenv').config();
 
@@ -383,7 +385,7 @@ const sendConfirmationEmails = async (consultation) => {
   // Send notification email to admin
   const adminMailOptions = {
     from: process.env.EMAIL_USER,
-    to: 'genuinepharmacykandy@gmail.com',
+    to: `${adminEmail}`,
     subject: `🏥 New Verified Consultation - ${consultation.patient.name} (${formatDate(consultation.slot.date)})`,
     html: adminEmailHtml
   };

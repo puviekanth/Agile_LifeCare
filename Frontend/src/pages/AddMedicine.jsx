@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 const AddMedicine = () => {
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     medicineName: '',

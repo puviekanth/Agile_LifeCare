@@ -10,7 +10,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState({});
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   useEffect(() => {
     if (id) {

@@ -20,7 +20,7 @@ const Checkout = () => {
   });
   const [orderToken, setOrderToken] = useState(null);
   const navigate = useNavigate();
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
  
   useEffect(() => {

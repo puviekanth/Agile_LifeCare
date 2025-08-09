@@ -11,7 +11,7 @@ const Profile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [loading, setLoading] = useState(false); // Track API request state
   const [error, setError] = useState(''); // Track errors for user feedback
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   const [user, setUser] = useState({
     username: '',

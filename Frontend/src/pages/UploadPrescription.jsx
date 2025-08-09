@@ -18,7 +18,7 @@ const UploadPrescription = () => {
     zip: '',
   });
   const fileInputRef = useRef(null);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
 
   const navigate = useNavigate();
 

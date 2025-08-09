@@ -13,7 +13,7 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const navigate = useNavigate();
 
   const filteredData = products.filter((item) => {

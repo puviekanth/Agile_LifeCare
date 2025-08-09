@@ -11,7 +11,7 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [deliveryFilter, setDeliveryFilter] = useState("");
   const [modalCartItems, setModalCartItems] = useState(null);
-  const api = 'http://localhost:3000';
+  const api = import.meta.env.VITE_API;
   const navigate = useNavigate();
 
   // Fetch all orders

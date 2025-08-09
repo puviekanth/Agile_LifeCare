@@ -36,7 +36,7 @@ const SalesAnalytics = () => {
         const endDate = new Date('2025-08-31T23:59:59.999Z');
 
         // Use full backend URL
-        const BASE_URL = 'http://localhost:3000'; // Adjust if backend is on a different host/port
+        const BASE_URL = import.meta.env.VITE_API; // Adjust if backend is on a different host/port
         const orderResponse = await fetch(`${BASE_URL}/api/anaorders?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
         if (!orderResponse.ok) throw new Error(`Orders fetch failed: ${orderResponse.statusText}`);
         const orders = await orderResponse.json();
