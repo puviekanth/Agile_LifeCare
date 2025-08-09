@@ -16,6 +16,8 @@ const PrescriptionModel = require('./model/PrescriptionModel');
 const Contact = require('./model/Contact');
 const DoctorModel = require('./model/DoctorModel');
 const Bill = require('./model/BillingModel');
+const PaitentModel = require('./model/Patients');
+const PatientConsultationModel = require('./model/PatientConsultation');
 const axios = require('axios');
 require('dotenv').config();
 // server.js or your Express app file
@@ -32,6 +34,7 @@ const {
   sendVerificationEmail, 
   sendConfirmationEmails 
 } = require('./services/emailService'); 
+const ConsultationModel = require('./model/ConsultationModel');
 const app = express();
 const visionClient = new ImageAnnotatorClient();
 const saltRounds = 10;
@@ -348,7 +351,7 @@ app.post('/addproduct', uploadMedicine, async (req, res) => {
 // Update existing product
 app.put('/updateproduct/:id', uploadMedicine, async (req, res) => {
   const { id } = req.params;
-  const { productName, description, price, category, quantity, companyName, manufactureDate, expiryDate } = req.body;
+  const { productName, description, sellingprice, category, quantity, companyName, manufactureDate, expiryDate } = req.body;
   try {
     const parsedManufactureDate = manufactureDate ? new Date(manufactureDate) : null;
     const parsedExpiryDate = expiryDate ? new Date(expiryDate) : null;
@@ -373,7 +376,7 @@ app.put('/updateproduct/:id', uploadMedicine, async (req, res) => {
     const updateData = {
       ...(productName && { productName }),
       ...(description && { description }),
-      ...(price && { price }),
+      ...(sellingprice && { sellingprice }),
       ...(category && { category }),
       ...(imagePath && { image: imagePath }),
       ...(quantity && { quantity }),
@@ -2159,6 +2162,382 @@ app.get('/api/orderstats', async (req, res) => {
   } catch (error) {
     console.error('Error fetching order stats:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Corrected backend endpoint
+app.get('/api/getconsultations', authenticateJWT, async(req, res) => {
+  try {
+    const email = req.user.email;
+    console.log('User email from token:', email);
+    
+    if (!email) {
+      return res.status(401).json({ message: 'Unauthorized Access' });
+    }
+
+    // First, let's get ALL consultations to debug
+    console.log('Fetching all consultations...');
+    const allConsultations = await ConsultationModel.find();
+    console.log('Total consultations in database:', allConsultations.length);
+    console.log('Sample consultation:', allConsultations[0]);
+
+    // For now, return all consultations to debug
+    // Later, you should filter by doctor: { doctorEmail: email }
+    const consultations = allConsultations;
+
+    console.log('Returning consultations:', consultations.length);
+    return res.status(200).json(consultations);
+    
+  } catch (error) {
+    console.error('Error fetching consultations:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+
+
+app.get('/patients', authenticateJWT, async (req, res) => {
+  try {
+    const { search, page = 1, limit = 10 } = req.query;
+    const doctorId = req.user.id;
+
+    let query = { createdBy: doctorId };
+
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { 'personalInfo.firstName': { $regex: search, $options: 'i' } },
+        { 'personalInfo.lastName': { $regex: search, $options: 'i' } },
+        { patientId: { $regex: search, $options: 'i' } },
+        { 'personalInfo.phone': { $regex: search, $options: 'i' } },
+        { 'personalInfo.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    
+    const patients = await Patient.find(query)
+      .sort({ lastUpdated: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .select('patientId personalInfo medicalInfo consultationHistory createdAt lastUpdated');
+
+    const total = await Patient.countDocuments(query);
+
+    res.json({
+      patients,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalPatients: total,
+        hasNext: skip + patients.length < total,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get single patient with full history
+app.get('/patients/:patientId', authenticateJWT, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+
+    const patient = await Patient.findOne({ 
+      patientId: patientId,
+      createdBy: doctorId 
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    res.json(patient);
+  } catch (error) {
+    console.error('Error fetching patient:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Create new patient
+app.post('/patients', authenticateJWT, async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const patientData = req.body;
+
+    // Check if patient already exists
+    const existingPatient = await Patient.findOne({
+      $or: [
+        { 'personalInfo.email': patientData.personalInfo.email },
+        { 'personalInfo.phone': patientData.personalInfo.phone }
+      ]
+    });
+
+    if (existingPatient) {
+      return res.status(400).json({ 
+        message: 'Patient with this email or phone already exists' 
+      });
+    }
+
+    const patient = new Patient({
+      ...patientData,
+      createdBy: doctorId
+    });
+
+    await patient.save();
+    res.status(201).json(patient);
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation error',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Update patient information
+app.put('/patients/:patientId', authenticateJWT, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+    const updateData = req.body;
+
+    const patient = await Patient.findOneAndUpdate(
+      { patientId: patientId, createdBy: doctorId },
+      { ...updateData, lastUpdated: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    res.json(patient);
+  } catch (error) {
+    console.error('Error updating patient:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Add consultation history to patient
+app.post('/patients/:patientId/consultations', authenticateJWT, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+    const doctorName = req.user.name;
+    const consultationData = req.body;
+
+    const patient = await Patient.findOne({ 
+      patientId: patientId,
+      createdBy: doctorId 
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Create new consultation record
+    const consultation = new Consultation({
+      patientId: patient._id,
+      doctorId: doctorId,
+      appointmentDetails: consultationData.appointmentDetails,
+      location: consultationData.location,
+      status: 'Completed',
+      consultationNotes: consultationData.consultationNotes,
+      fees: consultationData.fees,
+      completedAt: new Date()
+    });
+
+    await consultation.save();
+
+    // Add to patient's consultation history
+    const consultationHistory = {
+      consultationId: consultation._id,
+      date: new Date(),
+      doctorId: doctorId,
+      doctorName: doctorName,
+      symptoms: consultationData.symptoms,
+      diagnosis: consultationData.diagnosis,
+      medications: consultationData.medications,
+      notes: consultationData.notes,
+      followUpRequired: consultationData.followUpRequired,
+      followUpDate: consultationData.followUpDate
+    };
+
+    patient.consultationHistory.push(consultationHistory);
+    patient.lastUpdated = new Date();
+    await patient.save();
+
+    res.status(201).json({
+      message: 'Consultation added successfully',
+      consultation: consultationHistory,
+      patient: patient
+    });
+  } catch (error) {
+    console.error('Error adding consultation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get patient's consultation history
+app.get('/patients/:patientId/consultations', authenticateJWT, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+
+    const patient = await Patient.findOne({ 
+      patientId: patientId,
+      createdBy: doctorId 
+    }).select('consultationHistory');
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Sort consultation history by date (newest first)
+    const sortedHistory = patient.consultationHistory.sort((a, b) => 
+      new Date(b.date) - new Date(a.date)
+    );
+
+    res.json(sortedHistory);
+  } catch (error) {
+    console.error('Error fetching consultation history:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Delete patient
+app.delete('/patients/:patientId', authenticateJWT, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+
+    const patient = await Patient.findOneAndDelete({ 
+      patientId: patientId,
+      createdBy: doctorId 
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Also delete related consultations
+    await Consultation.deleteMany({ patientId: patient._id });
+
+    res.json({ message: 'Patient deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting patient:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Fetch all patients or search by term
+app.get('/api/patients', authenticateJWT, async (req, res) => {
+  try {
+    const { search } = req.query;
+    let query = {};
+    
+    if (search) {
+      query = {
+        $or: [
+          { 'name.fullName': { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+        ],
+      };
+    }
+    
+    const patients = await PaitentModel.find(query);
+    res.json({ patients });
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    res.status(500).json({ error: 'Failed to fetch patients' });
+  }
+});
+
+// Add new patient
+app.post('/api/patients', authenticateJWT, async (req, res) => {
+  try {
+    const { 
+      name, 
+      address, 
+      phone, 
+      dateOfBirth, 
+      gender, 
+      age, 
+      medicalHistory 
+    } = req.body;
+
+    const patientData = {
+      name: {
+        firstName: name.firstName,
+        lastName: name.lastName,
+        fullName: name.fullName || `${name.firstName} ${name.lastName}`,
+      },
+      address,
+      phone,
+      dateOfBirth,
+      age: age || (dateOfBirth 
+        ? Math.floor((new Date() - new Date(dateOfBirth)) / (1000 * 60 * 60 * 24 * 365))
+        : null),
+      gender,
+      medicalHistory: {
+        bloodType: medicalHistory.bloodType || '',
+        allergies: medicalHistory.allergies || [],
+        currentMedications: medicalHistory.currentMedications || [],
+        previousConsultation: false, // Default value
+        consultationHistory: medicalHistory.consultationHistory || [],
+      },
+      lastUpdated: new Date(),
+    };
+
+    const patient = new PaitentModel(patientData);
+    await patient.save();
+    res.status(201).json({ patient });
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    res.status(500).json({ error: 'Failed to create patient' });
+  }
+});
+
+app.post('/api/patients/:id/consultations', authenticateJWT, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const consultationData = req.body;
+
+    // Validate required fields
+    if (!consultationData.date || !consultationData.symptoms || !consultationData.diagnosis) {
+      return res.status(400).json({ message: 'Missing required consultation fields' });
+    }
+
+    // Find patient
+    const patient = await PaitentModel.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // ✅ Mark previous consultation as true
+    patient.medicalHistory.previousConsultation = true;
+
+    // Add new consultation
+    patient.medicalHistory.consultationHistory.push({
+      ...consultationData,
+      date: new Date(consultationData.date),
+      followUpDate: consultationData.followUpRequired ? new Date(consultationData.followUpDate) : undefined,
+    });
+
+    patient.lastUpdated = new Date();
+    await patient.save();
+
+    res.status(201).json({ message: 'Consultation added successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to add consultation' });
   }
 });
 

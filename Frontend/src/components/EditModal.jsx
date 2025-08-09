@@ -67,8 +67,8 @@ const EditProductModal = ({ showEditModal, setShowEditModal, formData, handleCha
               <label className="text-sm font-medium text-gray-700">Product Price</label>
               <input
                 type="number"
-                name="price"
-                value={formData.price || ''}
+                name="sellingprice"
+                value={formData.sellingprice || ''}
                 onChange={handleChange}
                 placeholder="Price"
                 className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"

@@ -23,6 +23,9 @@ function Login() {
                 if(response.data.user.email.endsWith('.admin@lifecare.com')){
                     navigate('/inventory');
                 }
+                else if(response.data.user.email.endsWith('.doc@gmail.com')){
+                    navigate('/doc-view');
+                }
                 else{
                     navigate('/home');
                 }

@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect , useState} from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const VerifyConsultation = () => {
   const { token } = useParams();
   const api = 'http://localhost:3000';
+  const [success,setSuccess] = useState(false);
+  const [isError,setError] = useState(false);
 
   useEffect(() => {
     const verifyBooking = async () => {
@@ -13,7 +15,7 @@ const VerifyConsultation = () => {
         alert('Consultation verified successfully!');
         // optionally redirect or show a success page
       } catch (err) {
-        alert('Verification failed or link expired.');
+        // alert('Verification failed or link expired.');
       }
     };
 

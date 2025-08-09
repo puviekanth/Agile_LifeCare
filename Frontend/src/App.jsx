@@ -31,6 +31,9 @@ import Orders from './pages/Order';
 import PendingOrders from './pages/PendingOrders';
 import ProcessingOrders from './pages/ProcessingOrders';
 import CompletedOrders from './pages/CompletedOrders';
+import DocView from './pages/DoctorConsultation';
+import ManagePatients from './pages/ManagePatients';
+import Docprofile from './pages/Docprofile';
 
 
 function App() {
@@ -69,6 +72,10 @@ function App() {
           <Route path='/pending-orders' element={<PendingOrders />} />
           <Route path='/processing-orders' element={<ProcessingOrders />} />
           <Route path='/comp-orders' element={<CompletedOrders />} />
+          <Route path='/doc-view' element={<DocView />} />
+          <Route path='/mg-pthis' element={< ManagePatients />} />
+          <Route path='/docprofile' element={<Docprofile />} />
+
         </Routes>
       </div>
       <Footer />
