@@ -63,7 +63,7 @@ function Signup() {
 
   return (
     <>
-    
+    <EHeader />
     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
       {serverError && <p className="text-red-500 text-sm text-center mb-4">{serverError}</p>}
