@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FiBell, FiMenu, FiX , FiShoppingCart} from 'react-icons/fi';
 import {jwtDecode} from 'jwt-decode'; // Browser-compatible JWT decoding
 import logo from '../assets/images/logo.png';
@@ -12,6 +12,7 @@ const EHeader = () => {
   const [letter,setLetter] = useState('');
   const api = import.meta.env.VITE_API;
   const [number,setNumber] = useState('');
+  const navigate = useNavigate();
   useEffect( () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -41,6 +42,12 @@ const EHeader = () => {
   }, []);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
+
+  const handleSignOut = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   const navLinks = [
     { to: '/home' , label:'Home'},
@@ -101,6 +108,16 @@ const EHeader = () => {
               <Link to='/profile' className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
                 {letter}
               </Link>
+              <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors bg-red-400 text-black-500"
+              aria-label="Sign out"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
             </>
           ) : (
             <>

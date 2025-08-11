@@ -37,7 +37,7 @@ const {
 const ConsultationModel = require('./model/ConsultationModel');
 const app = express();
 const visionClient = new ImageAnnotatorClient();
-const saltRounds = process.env.SALTROUNDS;
+const saltRounds = 10;
 const secretKey = process.env.SECRETKEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_GEOCODING_API;
 const MONGODB=process.env.MONGODB;
@@ -229,15 +229,6 @@ app.post('/signup', async (req, res) => {
         address,
       });
       res.status(200).json({ message: 'Admin User Created Successfully', user: adminUser });
-    } else if(email.endsWith('@gmail.com')){
-      const newUser = await CustomerModel.create({
-        name,
-        password: encryptedPassword,
-        email,
-        phone,
-        address,
-      });
-      res.status(200).json({ message: 'Customer Created Successfully', user: newUser });
     }
     else if(email.endsWith('.doc@gmail.com')){
       const doctor = await DoctorModel.create({
@@ -249,7 +240,18 @@ app.post('/signup', async (req, res) => {
       });
       res.status(200).json({ message: 'Customer Created Successfully', user: doctor });
     }
-  } catch (e) {
+    else{
+      const newUser = await CustomerModel.create({
+        name,
+        password: encryptedPassword,
+        email,
+        phone,
+        address,
+      });
+      res.status(200).json({ message: 'Customer Created Successfully', user: newUser });
+    }
+    
+  }catch (e) {
     if (e.code === 11000) {
       res.status(400).json({ error: "Email or NIC already exists." });
     } else {
@@ -275,7 +277,19 @@ app.post('/login', async (req, res) => {
       } else {
         return res.status(401).json({ error: 'Invalid username or password' });
       }
-    } else if(email.endsWith('@gmail.com')){
+    }else if(email.endsWith('.doc@gmail.com')){
+      const user = await DoctorModel.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: 'No User Found, please register.' });
+      }
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (isMatch) {
+        const token = jwt.sign({ email: user.email }, secretKey, { expiresIn: '1h' });
+        return res.status(200).json({ message: 'Logged in successfully', token, user });
+      } else {
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
+    } else{
       const user = await CustomerModel.findOne({ email });
       if (!user) {
         return res.status(404).json({ error: 'No User Found, please register.' });
@@ -288,19 +302,7 @@ app.post('/login', async (req, res) => {
         return res.status(401).json({ error: 'Invalid username or password' });
       }
     }
-    else if(email.endsWith('.doc@gmail.com')){
-      const user = await DoctorModel.findOne({ email });
-      if (!user) {
-        return res.status(404).json({ error: 'No User Found, please register.' });
-      }
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (isMatch) {
-        const token = jwt.sign({ email: user.email }, secretKey, { expiresIn: '1h' });
-        return res.status(200).json({ message: 'Logged in successfully', token, user });
-      } else {
-        return res.status(401).json({ error: 'Invalid username or password' });
-      }
-    }
+    
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: 'Server error' });
@@ -494,6 +496,29 @@ app.delete('/deletesupplier/:id', async (req, res) => {
 app.get('/profile', authenticateJWT, async (req, res) => {
   try {
     const email = req.user.email;
+    if(email.endsWith('.doc@gmail.com')){
+      const currentUser = await DoctorModel.findOne({ email });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'No Record Exists' });
+    }
+    return res.status(200).json({
+      name: currentUser.name,
+      email: currentUser.email,
+      phone: currentUser.phone,
+      address: currentUser.address,
+    });
+    }else if(email.endsWith('.admin@lifecare.com')){
+      const currentUser = await AdminModel.findOne({ email });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'No Record Exists' });
+    }
+    return res.status(200).json({
+      name: currentUser.name,
+      email: currentUser.email,
+      phone: currentUser.phone,
+      address: currentUser.address,
+    });
+    }else{
     const currentUser = await CustomerModel.findOne({ email });
     if (!currentUser) {
       return res.status(404).json({ error: 'No Record Exists' });
@@ -504,6 +529,7 @@ app.get('/profile', authenticateJWT, async (req, res) => {
       phone: currentUser.phone,
       address: currentUser.address,
     });
+    }
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve user data' });
   }
@@ -588,6 +614,23 @@ app.get('/getproductsOTC', async (req, res) => {
 app.get('/getLetter', authenticateJWT, async (req, res) => {
   try {
     const email = req.user.email;
+    if(email.endsWith('.doc@gmail.com')){
+      const user = await DoctorModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const username = user.name;
+    const letter = username.charAt(0).toUpperCase();
+    res.status(200).json({ letter });
+    }else if(email.endsWith('.admin@lifecare.com')){
+      const user = await AdminModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const username = user.name;
+    const letter = username.charAt(0).toUpperCase();
+    res.status(200).json({ letter });
+  } else{
     const user = await CustomerModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -597,7 +640,8 @@ app.get('/getLetter', authenticateJWT, async (req, res) => {
     const items = await CartModel.find({ email });
     const number = items.length;
     res.status(200).json({ letter, number });
-  } catch (error) {
+  } 
+}catch (error) {
     console.error('Error on the server side', error);
     res.status(500).json({ message: 'Server error' });
   }
@@ -799,7 +843,6 @@ app.post('/book-consultation', authenticateJWT, uploadMedicalRecords, async (req
         time: parsedSlot.time
       },
       status: 'Pending',
-      createdBy: email,
       verificationToken,
       verificationTokenExpires,
       verificationStatus: false
@@ -2543,7 +2586,22 @@ app.post('/api/patients/:id/consultations', authenticateJWT, async (req, res) =>
 });
 
 
-
+app.get('/getproductsbill', async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const allproducts = await ProductModel.find();
+    
+    
+    const products = allproducts.filter(product => 
+      product.quantity > 0 && product.expiryDate > currentDate
+    );
+    
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+});
 
 // Start the server
 app.listen(3000, () => {

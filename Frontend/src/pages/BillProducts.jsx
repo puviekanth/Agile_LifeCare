@@ -27,7 +27,7 @@ function BillProduct() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${api}/getproducts`);
+        const response = await fetch(`${api}/getproductsbill`);
         if (!response.ok) {
           throw new Error(`Server error: ${response.status}`);
         }

@@ -158,16 +158,7 @@ const Checkout = () => {
           Checkout
         </motion.h1>
 
-        {/* Error Display */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-4 bg-red-100 text-red-600 rounded-xl mb-6"
-          >
-            <p>{error}</p>
-          </motion.div>
-        )}
+        
 
         {/* Loading State */}
         {isLoading ? (
@@ -215,7 +206,7 @@ const Checkout = () => {
                 </div>
                 <div className="mt-6 text-right">
                   <p className="text-xl font-semibold text-gray-800">
-                    Total: LKR {total.toFixed(2)}
+                    Total: LKR {total.toFixed(2)+600}
                   </p>
                 </div>
               </div>

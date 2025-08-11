@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
+import DHeader from '../components/DHeader';
 
 const PatientHistoryInterface = () => {
   const [patients, setPatients] = useState([]);
@@ -182,6 +183,8 @@ const PatientHistoryInterface = () => {
     };
 
     return (
+      <>
+      
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
@@ -433,6 +436,7 @@ const PatientHistoryInterface = () => {
           </form>
         </div>
       </div>
+      </>
     );
   };
 
@@ -888,6 +892,8 @@ const PatientHistoryInterface = () => {
   };
 
   return (
+    <>
+    <DHeader />
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -959,6 +965,7 @@ const PatientHistoryInterface = () => {
         {showAddPatient && <AddPatientForm />}
       </div>
     </div>
+    </>
   );
 };
 

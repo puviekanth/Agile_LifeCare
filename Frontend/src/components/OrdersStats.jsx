@@ -36,7 +36,7 @@ const OrderStats = () => {
         if (!response.ok) throw new Error(`Orders fetch failed: ${response.statusText}`);
         const orders = await response.json();
 
-        console.log('Orders:', orders);
+        
 
         // Count orders by status
         const statusCounts = {
@@ -77,7 +77,7 @@ const OrderStats = () => {
           }]
         };
 
-        console.log('Chart Data:', newChartData);
+        
         setChartData(newChartData);
       } catch (error) {
         console.error('Error fetching order stats:', error);

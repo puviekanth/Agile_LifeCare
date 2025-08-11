@@ -1,11 +1,18 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState , useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FiBell, FiMenu, FiX } from 'react-icons/fi';
 import logo from '../assets/images/logo.png';
+import {Link} from 'react-router-dom';
+import {jwtDecode} from 'jwt-decode';
+import axios from 'axios';
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
+  const navigate = useNavigate();
+  const [letter,setLetter] = useState('');
+  const api = import.meta.env.VITE_API;
+  const [isLoggedIn,setIsLoggedIn] = useState(false);
 
   // Define navigation links in an array for reusability
   const navLinks = [
@@ -18,11 +25,47 @@ const Header = () => {
     { to:'/analytics' , label:'Analytics'}
   ];
 
+  useEffect( () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        jwtDecode(token); // Decode token (no verification needed for client-side)
+        setIsLoggedIn(true);
+         axios.get(`${api}/getLetter`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res)=>{
+        setLetter(res.data.letter);
+        
+      })
+      .catch((error)=>{
+        console.error('Error fetching the user letter',error)
+      });
+      } catch (error) {
+        setIsLoggedIn(false);
+        localStorage.removeItem('token');
+      }
+
+      
+
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   // Common styles for NavLink
   const getNavLinkClass = ({ isActive }) =>
     isActive
       ? 'text-yellow-300 border-yellow-300 md:border-b-2 md:pb-1 border-l-4 md:border-l-0 pl-2 md:pl-0'
       : 'text-white hover:text-yellow-200 transition pl-2 md:pl-0';
+
+
 
   return (
     <header className="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-md">
@@ -63,14 +106,20 @@ const Header = () => {
         {/* Right Side Icons - Desktop */}
         <div className="hidden md:flex items-center gap-4">
           <div className="relative">
-            <FiBell className="text-xl text-white" />
-            <span className="absolute -top-2 -right-2 bg-yellow-400 text-blue-800 text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm">
-              3
-            </span>
           </div>
-          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
-            A
-          </div>
+          <Link to='/profile' className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
+                {letter}
+          </Link>
+          <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors bg-red-400 text-black-500"
+              aria-label="Sign out"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
         </div>
       </div>
 

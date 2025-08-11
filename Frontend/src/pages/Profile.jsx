@@ -5,6 +5,8 @@ import ChangePasswordModal from '../components/ChangePasswordModal';
 import EHeader from '../components/EHeader';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import DHeader from '../components/DHeader';
+import Header from '../components/Header';
 
 const Profile = () => {
   const [editing, setEditing] = useState(false);
@@ -12,6 +14,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false); // Track API request state
   const [error, setError] = useState(''); // Track errors for user feedback
   const api = import.meta.env.VITE_API;
+  
 
   const [user, setUser] = useState({
     username: '',
@@ -61,6 +64,16 @@ const Profile = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
   };
 
+  const renderHeader = () =>{
+    if(user.email.endsWith('.doc@gmail.com')){
+      return <DHeader />
+    }else if(user.email.endsWith('.admin@lifecare.com')){
+      return <Header />
+    }else{
+      return <EHeader />
+    }
+  }
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault(); // Prevent default button behavior if needed
     setLoading(true); // Show loading state
@@ -92,7 +105,7 @@ const Profile = () => {
 
   return (
     <>
-      <EHeader />
+      { renderHeader()}
       <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen py-16 px-4">
         {/* Buttons below header, top-right */}
         <div className="absolute top-0 right-4 mt-16 flex gap-3">

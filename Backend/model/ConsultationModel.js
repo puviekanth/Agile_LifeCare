@@ -2,76 +2,32 @@
 const mongoose = require('mongoose');
 
 const consultationSchema = new mongoose.Schema({
-  consultationId: {
-    type: String,
-    unique: true,
-    required: true
+  user:{
+    name:String,
+    phone:String,
+    email:String
   },
-  patientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Patient',
-    required: true
+  patient:{
+    name:String,
+    age:String,
+    gender:String,
+    reason:String,
   },
-  doctorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  medicalRecords:String,
+  location:{
+    lat:String,
+    lng:String,
+    link:String,
   },
-  appointmentDetails: {
-    scheduledDate: {
-      type: Date,
-      required: true
-    },
-    scheduledTime: {
-      type: String,
-      required: true
-    },
-    duration: {
-      type: Number, // in minutes
-      default: 30
-    },
-    type: {
-      type: String,
-      enum: ['Initial', 'Follow-up', 'Emergency'],
-      default: 'Initial'
-    }
+  slot:{
+    date:Date,
+    time:String,
   },
-  location: {
-    lat: Number,
-    lng: Number,
-    address: String,
-    link: String
-  },
-  status: {
-    type: String,
-    enum: ['Scheduled', 'Confirmed', 'In-Progress', 'Completed', 'Cancelled', 'No-Show'],
-    default: 'Scheduled'
-  },
-  consultationNotes: {
-    chiefComplaint: String,
-    symptoms: String,
-    diagnosis: String,
-    treatmentPlan: String,
-    doctorNotes: String
-  },
-  fees: {
-    consultationFee: {
-      type: Number,
-      default: 0
-    },
-    currency: {
-      type: String,
-      default: 'LKR'
-    },
-    paymentStatus: {
-      type: String,
-      enum: ['Pending', 'Paid', 'Refunded'],
-      default: 'Pending'
-    }
-  },
-  completedAt: Date,
-  cancelledAt: Date,
-  cancellationReason: String
+  status:{type:String,enum:['Pending','Confirmed']},
+  verificationToken:String,
+  verificationTokenExpires:Date,
+  verificationStatus:{type:Boolean,default:false},
+  verifiedAt:{type:Date,required:false},
 }, { timestamps: true });
 
 // Generate consultation ID before saving

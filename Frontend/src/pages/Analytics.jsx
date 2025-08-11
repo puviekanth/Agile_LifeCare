@@ -1,4 +1,4 @@
-import React from 'react';
+import React , {useState,useEffect} from 'react';
 import { TrendingUp, Package, ShoppingCart, FileText, DollarSign, Activity, Users, AlertTriangle } from 'lucide-react';
 import Header from '../components/Header';
 import SalesAnalytics from '../components/SaleAnalytics';
@@ -8,6 +8,27 @@ import PrescriptionStats from '../components/PrescriptionAnalytics';
 import ProductAnalytics from '../components/ProductStatsChart';
 
 const Dashboard = () => {
+
+  const [date,setDate] = useState('');
+  const [month,setMonth] = useState('');
+  const [year,setYear] = useState('');
+
+   const getDate = () => {
+    const today = new Date();
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    setDate(today.getDate());
+    setMonth(monthNames[today.getMonth()]); 
+    setYear(today.getFullYear());
+  };
+  
+   useEffect(() => {
+    getDate();
+  }, []);
+
   return (
     <>
       <Header />
@@ -22,7 +43,9 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                  <span className="text-blue-700 font-medium">August 8, 2025</span>
+                  <span className="text-blue-700 font-medium">
+                    {month} {date}, {year}
+                  </span>
                 </div>
               </div>
             </div>

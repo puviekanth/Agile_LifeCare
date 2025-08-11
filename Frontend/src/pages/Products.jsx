@@ -311,7 +311,7 @@ const Products = () => {
                         src={`${api}/${product.image}`} 
                         alt={product.productName} 
                         className="h-full w-full object-contain"
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                        onError={(e) => { e.target.src = ''; }}
                         whileHover={product.quantity > 0 ? { scale: 1.05 } : {}}
                         transition={{ duration: 0.3 }}
                       />

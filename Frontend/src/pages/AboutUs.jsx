@@ -15,9 +15,12 @@ import {
   FaCrown,
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import EHeader from '../components/EHeader';
 
 const AboutUs = () => {
   return (
+    <>
+    <EHeader />
     <div className="font-sans text-gray-800">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white py-16 text-center">
@@ -183,6 +186,7 @@ const AboutUs = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

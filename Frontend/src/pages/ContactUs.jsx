@@ -10,6 +10,7 @@ import {
   FaHeartbeat,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import EHeader from "../components/EHeader";
 
 const departments = [
   "Medical Consultation",
@@ -73,6 +74,8 @@ const ContactUs = () => {
   };
 
   return (
+    <>
+    <EHeader />
     <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white py-16 px-4">
       <div className="max-w-6xl mx-auto text-center">
         <motion.h1
@@ -309,6 +312,7 @@ const ContactUs = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FiBell, FiMenu, FiX , FiShoppingCart} from 'react-icons/fi';
 import {jwtDecode} from 'jwt-decode'; // Browser-compatible JWT decoding
 import logo from '../assets/images/logo.png';
@@ -12,6 +12,7 @@ const DHeader = () => {
   const [letter,setLetter] = useState('');
   const api = import.meta.env.VITE_API;
   const [number,setNumber] = useState('');
+  const navigate = useNavigate();
   useEffect( () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -23,7 +24,7 @@ const DHeader = () => {
       })
       .then((res)=>{
         setLetter(res.data.letter);
-        setNumber(res.data.number);
+        
       })
       .catch((error)=>{
         console.error('Error fetching the user letter',error)
@@ -41,6 +42,12 @@ const DHeader = () => {
   }, []);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
+
+  const handleSignOut = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   const navLinks = [
     { to: '/doc-view' , label:'Consultations'},
@@ -86,10 +93,20 @@ const DHeader = () => {
             <>
 
             
-              
+              <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors bg-red-400 text-black-500"
+              aria-label="Sign out"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
               <Link to='/docprofile' className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
                 {letter}
               </Link>
+
             </>
           ) : (
             <>
@@ -110,54 +127,7 @@ const DHeader = () => {
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="md:hidden px-6 pb-4">
-          <nav className="flex flex-col gap-4 text-sm font-medium bg-blue-900 rounded-md p-4 shadow-md">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={toggleMenu}
-                className={getNavLinkClass}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-            <div className="flex justify-between items-center pt-4 border-t border-blue-800 mt-4">
-              {isLoggedIn ? (
-                <>
-                  <div className="relative">
-                <FiShoppingCart className="text-xl text-white" />
-                <span className="absolute -top-2 -right-2 bg-yellow-400 text-blue-800 text-xs w-4 h-4 flex items-center justify-center rounded-full font-semibold shadow-sm">
-                  3
-                </span>
-              </div>
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold shadow-inner">
-                    {letter}
-                  </div>
-                </>
-              ) : (
-                <div className="flex gap-4">
-                  <NavLink
-                    to="/login"
-                    onClick={toggleMenu}
-                    className="text-blue hover:text-yellow-200 transition bg-white-500 px-4 py-1 rounded-md"
-                  >
-                    Login
-                  </NavLink>
-                  <NavLink
-                    to="/register"
-                    onClick={toggleMenu}
-                    className="text-white hover:text-yellow-200 transition bg-green-500 px-4 py-1 rounded-md"
-                  >
-                    Sign Up
-                  </NavLink>
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
-      )}
+      
     </header>
   );
 };

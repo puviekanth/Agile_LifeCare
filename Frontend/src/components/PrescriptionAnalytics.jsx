@@ -38,7 +38,7 @@ const PrescriptionAnalytics = () => {
           headers: { Authorization: `Bearer ${token}` },
           params: { startDate, endDate },
         });
-        console.log(response.data);
+        
         setSummary(response.data);
       } catch (err) {
         console.error('Error fetching summary:', err);

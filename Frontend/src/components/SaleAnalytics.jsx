@@ -44,7 +44,7 @@ const SalesAnalytics = () => {
         const billResponse = await fetch(`${BASE_URL}/api/anabills?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
         if (!billResponse.ok) throw new Error(`Bills fetch failed: ${billResponse.statusText}`);
         const bills = await billResponse.json();
-        console.log('Orders:', orders, 'Bills:', bills);
+        
         // Process sales data by date
         const dailySales = {};
         const dateOptions = { day: '2-digit', month: '2-digit' };
@@ -61,7 +61,7 @@ const SalesAnalytics = () => {
 
         const labels = Object.keys(dailySales).sort();
         const salesData = labels.map(date => dailySales[date]);
-        console.log(dailySales, labels, salesData);
+        
 
         setChartData({
           labels,
