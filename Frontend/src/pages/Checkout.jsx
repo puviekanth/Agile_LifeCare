@@ -206,7 +206,7 @@ const Checkout = () => {
                 </div>
                 <div className="mt-6 text-right">
                   <p className="text-xl font-semibold text-gray-800">
-                    Total: LKR {total.toFixed(2)+600}
+                    Total: LKR {total.toFixed(2)}
                   </p>
                 </div>
               </div>
