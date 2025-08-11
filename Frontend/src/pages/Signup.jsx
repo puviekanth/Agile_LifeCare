@@ -153,18 +153,7 @@ function Signup() {
           Sign Up
         </button>
         <div className="text-center mb-4">or</div>
-        <button
-          type="button"
-          className="w-full bg-gray-100 text-gray-700 p-2 rounded flex items-center justify-center mb-4"
-          disabled // Disable until Google signup is implemented
-        >
-          <img
-            src="https://www.google.com/favicon.ico"
-            alt="Google"
-            className="w-5 h-5 mr-2"
-          />
-          Sign up with Google
-        </button>
+        
         <p className="text-center text-blue-500 text-sm">
           Already have an account? <Link to="/login" className="underline">Log in</Link>
         </p>
